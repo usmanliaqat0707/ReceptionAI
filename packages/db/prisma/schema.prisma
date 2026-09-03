@@ -1,0 +1,644 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  AGENT_MANAGER
+  RECEPTION_STAFF
+  ANALYST
+}
+
+enum ReceptionistStatus {
+  DRAFT
+  TESTING
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  CONNECTED
+  ACTIVE
+  ENDING
+  COMPLETED
+  MISSED
+  FAILED
+  REJECTED
+  ABANDONED
+  TRANSFERRED
+}
+
+enum CallOutcome {
+  QUESTION_ANSWERED
+  APPOINTMENT_BOOKED
+  APPOINTMENT_RESCHEDULED
+  APPOINTMENT_CANCELLED
+  LEAD_CAPTURED
+  MESSAGE_TAKEN
+  CALL_TRANSFERRED
+  CALLBACK_REQUESTED
+  NO_ACTION
+  SPAM
+  FAILED
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  CONTACTED
+  APPOINTMENT
+  WON
+  LOST
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  RESCHEDULED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum MessageUrgency {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum KnowledgeSourceStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  ARCHIVED
+}
+
+model User {
+  id                String            @id @default(cuid())
+  email             String            @unique
+  passwordHash      String
+  emailVerifiedAt   DateTime?
+  name              String
+  avatarUrl         String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  memberships       WorkspaceMember[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id                String            @id @default(cuid())
+  name              String
+  slug              String            @unique
+  timezone          String            @default("America/Los_Angeles")
+  industry          String            @default("Dental Clinic")
+  status            String            @default("active")
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  members           WorkspaceMember[]
+  receptionists     Receptionist[]
+  phoneNumbers      PhoneNumber[]
+  calls             Call[]
+  callMessages      CallMessage[]
+  toolExecutions    CallToolExecution[]
+  callSummaries     CallSummary[]
+  contacts          Contact[]
+  leads             Lead[]
+  appointments      Appointment[]
+  services          Service[]
+  businessHours     BusinessHour[]
+  specialHours      SpecialHour[]
+  knowledgeSources  KnowledgeSource[]
+  knowledgeDocs     KnowledgeDocument[]
+  knowledgeChunks   KnowledgeChunk[]
+  integrations      Integration[]
+  messages          Message[]
+  webhookEndpoints  WebhookEndpoint[]
+  webhookDeliveries WebhookDelivery[]
+  apiKeys           ApiKey[]
+  auditLogs         AuditLog[]
+  usageEvents       UsageEvent[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(RECEPTION_STAFF)
+  status      String        @default("active")
+  createdAt   DateTime      @default(now())
+
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Receptionist {
+  id                 String             @id @default(cuid())
+  workspaceId        String
+  name               String
+  slug               String
+  description        String?
+  role               String             @default("Dental Office Receptionist")
+  industry           String             @default("dental")
+  language           String             @default("en-US")
+  status             ReceptionistStatus @default(ACTIVE)
+  voiceConfig        Json               @default("{\"voice\":\"alloy\",\"speed\":1.0,\"style\":\"friendly\",\"interruptionHandling\":true,\"responseLength\":\"concise\"}")
+  personalityConfig  Json               @default("{\"traits\":[\"Professional\",\"Friendly\",\"Warm\",\"Concise\"],\"tone\":\"warm\"}")
+  greeting           String             @default("Thank you for calling. How may I assist you today?")
+  afterHoursGreeting String?            @default("Thank you for calling. Our office is currently closed, but I can help you schedule an appointment or take a message.")
+  instructions       String             @db.Text
+  objectiveConfig    Json               @default("{\"answerQuestions\":true,\"bookAppointments\":true,\"captureLeads\":true,\"takeMessages\":true,\"transferEmergency\":true}")
+  behaviorConfig     Json               @default("{\"maxDurationSeconds\":600,\"silenceTimeoutSeconds\":15,\"recordCalls\":true}")
+  createdBy          String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  workspace          Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  phoneNumbers       PhoneNumber[]
+  calls              Call[]
+  appointments       Appointment[]
+  knowledgeSources   ReceptionistKnowledgeSource[]
+  toolExecutions     CallToolExecution[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@map("receptionists")
+}
+
+model PhoneNumber {
+  id                 String        @id @default(cuid())
+  workspaceId        String
+  provider           String        @default("twilio")
+  providerNumberId   String?
+  number             String
+  country            String        @default("US")
+  receptionistId     String?
+  status             String        @default("active")
+  capabilities       Json          @default("{\"voice\":true,\"sms\":true}")
+  createdAt          DateTime      @default(now())
+
+  workspace          Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  receptionist       Receptionist? @relation(fields: [receptionistId], references: [id], onDelete: SetNull)
+  calls              Call[]
+
+  @@index([workspaceId])
+  @@map("phone_numbers")
+}
+
+model Call {
+  id                 String             @id @default(cuid())
+  workspaceId        String
+  receptionistId     String
+  phoneNumberId      String?
+  providerCallId     String?
+  direction          String             @default("inbound")
+  callerNumber       String
+  destinationNumber  String?
+  status             CallStatus         @default(COMPLETED)
+  startedAt          DateTime           @default(now())
+  answeredAt         DateTime?
+  endedAt            DateTime?
+  durationSeconds    Int                @default(0)
+  primaryOutcome     CallOutcome        @default(QUESTION_ANSWERED)
+  sentiment          String             @default("positive")
+  recordingStatus    String             @default("available")
+  recordingKey       String?
+  createdAt          DateTime           @default(now())
+
+  workspace          Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  receptionist       Receptionist       @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+  phoneNumber        PhoneNumber?       @relation(fields: [phoneNumberId], references: [id], onDelete: SetNull)
+  
+  participants       CallParticipant[]
+  messages           CallMessage[]
+  toolExecutions     CallToolExecution[]
+  summary            CallSummary?
+  leads              Lead[]
+  appointments       Appointment[]
+  officeMessages     Message[]
+
+  @@index([workspaceId, startedAt])
+  @@index([workspaceId, primaryOutcome])
+  @@map("calls")
+}
+
+model CallParticipant {
+  id          String   @id @default(cuid())
+  callId      String
+  type        String   @default("caller")
+  contactId   String?
+  phoneNumber String?
+  displayName String?
+
+  call        Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId])
+  @@map("call_participants")
+}
+
+model CallMessage {
+  id          String   @id @default(cuid())
+  workspaceId String
+  callId      String
+  sequence    Int
+  role        String   // caller, assistant, system, tool
+  contentType String   @default("text")
+  text        String   @db.Text
+  startedAt   DateTime?
+  endedAt     DateTime?
+  metadata    Json?
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  call        Call      @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([callId, sequence])
+  @@map("call_messages")
+}
+
+model CallToolExecution {
+  id             String        @id @default(cuid())
+  workspaceId    String
+  callId         String
+  receptionistId String
+  toolName       String
+  toolCallId     String
+  inputJson      Json
+  outputJson     Json
+  status         String        @default("success")
+  error          String?
+  durationMs     Int           @default(0)
+  startedAt      DateTime      @default(now())
+  completedAt    DateTime?
+
+  workspace      Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  call           Call          @relation(fields: [callId], references: [id], onDelete: Cascade)
+  receptionist   Receptionist  @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([callId])
+  @@map("call_tool_executions")
+}
+
+model CallSummary {
+  id                 String        @id @default(cuid())
+  workspaceId        String
+  callId             String        @unique
+  summary            String        @db.Text
+  intent             String
+  primaryOutcome     CallOutcome   @default(QUESTION_ANSWERED)
+  secondaryOutcomes  Json          @default("[]")
+  sentiment          String        @default("positive")
+  followUpRequired   Boolean       @default(false)
+  structuredData     Json          @default("{}")
+  model              String        @default("gpt-4o")
+  createdAt          DateTime      @default(now())
+
+  workspace          Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  call               Call          @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("call_summaries")
+}
+
+model Contact {
+  id          String        @id @default(cuid())
+  workspaceId String
+  firstName   String
+  lastName    String?
+  phone       String
+  email       String?
+  company     String?
+  source      String        @default("voice_call")
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  leads       Lead[]
+  appointments Appointment[]
+  messages    Message[]
+
+  @@index([workspaceId, phone])
+  @@map("contacts")
+}
+
+model Lead {
+  id              String      @id @default(cuid())
+  workspaceId     String
+  contactId       String
+  callId          String?
+  status          LeadStatus  @default(NEW)
+  source          String      @default("inbound_call")
+  intent          String
+  score           Int         @default(70)
+  estimatedValue  Float?
+  assignedUserId  String?
+  notes           String?     @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  workspace       Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact         Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  call            Call?       @relation(fields: [callId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@map("leads")
+}
+
+model Appointment {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  contactId       String
+  callId          String?
+  receptionistId  String?
+  integrationId   String?
+  externalEventId String?
+  serviceId       String?
+  startAt         DateTime
+  endAt           DateTime
+  timezone        String            @default("America/Los_Angeles")
+  status          AppointmentStatus @default(CONFIRMED)
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact         Contact           @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  call            Call?             @relation(fields: [callId], references: [id], onDelete: SetNull)
+  receptionist    Receptionist?     @relation(fields: [receptionistId], references: [id], onDelete: SetNull)
+  service         Service?          @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, startAt])
+  @@map("appointments")
+}
+
+model Service {
+  id              String        @id @default(cuid())
+  workspaceId     String
+  name            String
+  description     String?
+  durationMinutes Int           @default(30)
+  priceText       String        @default("$120")
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+
+  workspace       Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  appointments    Appointment[]
+
+  @@index([workspaceId])
+  @@map("services")
+}
+
+model BusinessHour {
+  id          String    @id @default(cuid())
+  workspaceId String
+  dayOfWeek   Int       // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  openTime    String    @default("09:00")
+  closeTime   String    @default("18:00")
+  enabled     Boolean   @default(true)
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, dayOfWeek])
+  @@map("business_hours")
+}
+
+model SpecialHour {
+  id          String    @id @default(cuid())
+  workspaceId String
+  date        DateTime
+  openTime    String?
+  closeTime   String?
+  closed      Boolean   @default(true)
+  note        String?
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, date])
+  @@map("special_hours")
+}
+
+model KnowledgeSource {
+  id          String                @id @default(cuid())
+  workspaceId String
+  type        String                // website, sitemap, pdf, docx, txt, manual, faq
+  name        String
+  sourceUrl   String?
+  storageKey  String?
+  status      KnowledgeSourceStatus @default(READY)
+  config      Json                  @default("{}")
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  workspace   Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  documents   KnowledgeDocument[]
+  chunks      KnowledgeChunk[]
+  receptionistMappings ReceptionistKnowledgeSource[]
+
+  @@index([workspaceId])
+  @@map("knowledge_sources")
+}
+
+model KnowledgeDocument {
+  id          String          @id @default(cuid())
+  workspaceId String
+  sourceId    String
+  externalUrl String?
+  title       String
+  contentHash String?
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  source      KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  chunks      KnowledgeChunk[]
+
+  @@index([workspaceId])
+  @@index([sourceId])
+  @@map("knowledge_documents")
+}
+
+model KnowledgeChunk {
+  id          String            @id @default(cuid())
+  workspaceId String
+  sourceId    String
+  documentId  String
+  content     String            @db.Text
+  tokenCount  Int               @default(0)
+  chunkIndex  Int               @default(0)
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  source      KnowledgeSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  document    KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([documentId])
+  @@map("knowledge_chunks")
+}
+
+model ReceptionistKnowledgeSource {
+  receptionistId    String
+  knowledgeSourceId String
+
+  receptionist      Receptionist    @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+  knowledgeSource   KnowledgeSource @relation(fields: [knowledgeSourceId], references: [id], onDelete: Cascade)
+
+  @@id([receptionistId, knowledgeSourceId])
+  @@map("receptionist_knowledge_sources")
+}
+
+model Integration {
+  id                   String    @id @default(cuid())
+  workspaceId          String
+  type                 String    // calendar, crm, messaging, email, webhook
+  provider             String    // google_calendar, outlook, hubspot, twilio, demo_calendar
+  name                 String
+  status               String    @default("active")
+  encryptedCredentials String?   @db.Text
+  config               Json      @default("{}")
+  createdBy            String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("integrations")
+}
+
+model Message {
+  id                String         @id @default(cuid())
+  workspaceId       String
+  callId            String?
+  contactId         String?
+  recipientUserId   String?
+  subject           String
+  body              String         @db.Text
+  urgency           MessageUrgency @default(NORMAL)
+  callbackRequested Boolean        @default(true)
+  callbackAt        DateTime?
+  status            String         @default("unread")
+  createdAt         DateTime       @default(now())
+
+  workspace         Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  call              Call?          @relation(fields: [callId], references: [id], onDelete: SetNull)
+  contact           Contact?       @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@map("messages")
+}
+
+model WebhookEndpoint {
+  id               String            @id @default(cuid())
+  workspaceId      String
+  url              String
+  secretHash       String
+  status           String            @default("active")
+  subscribedEvents Json              @default("[\"call.completed\",\"appointment.created\",\"lead.created\"]")
+  createdAt        DateTime          @default(now())
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  deliveries       WebhookDelivery[]
+
+  @@index([workspaceId])
+  @@map("webhook_endpoints")
+}
+
+model WebhookDelivery {
+  id                  String          @id @default(cuid())
+  workspaceId         String
+  endpointId          String
+  eventId             String
+  eventType           String
+  payload             Json
+  attempt             Int             @default(1)
+  status              String          @default("succeeded") // pending, delivering, succeeded, failed, dead
+  responseCode        Int?            @default(200)
+  responseBodyExcerpt String?
+  nextAttemptAt       DateTime?
+  createdAt           DateTime        @default(now())
+
+  workspace           Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  endpoint            WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([endpointId])
+  @@map("webhook_deliveries")
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  prefix      String
+  secretHash  String
+  scopes      Json      @default("[\"calls:read\",\"contacts:read\",\"appointments:read\"]")
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("api_keys")
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  actorUserId  String?
+  actorType    String    @default("user") // user, system, api_key, ai_receptionist
+  action       String
+  resourceType String
+  resourceId   String?
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user         User?     @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@map("audit_logs")
+}
+
+model UsageEvent {
+  id          String   @id @default(cuid())
+  workspaceId String
+  type        String   // voice_seconds, ai_tokens, transcription_seconds, storage_bytes, sms, emails
+  quantity    Int      @default(1)
+  callId      String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@map("usage_events")
+}
