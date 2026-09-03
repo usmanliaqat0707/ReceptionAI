@@ -1,170 +1,135 @@
-# ReceptionAI — AI Voice Receptionist Multi-Tenant SaaS
+# ReceptionAI — Multi-Tenant AI Voice Receptionist SaaS Platform
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_with_pgvector-blue.svg)](https://github.com/pgvector/pgvector)
-[![Prisma](https://img.shields.io/badge/Prisma-5.22-darkblue.svg)](https://www.prisma.io/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8.svg)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-> **Enterprise-grade, multi-tenant AI phone receptionist platform.** Operates continuously during live natural phone calls with sub-400ms speech latency, zero-hallucination calendar availability checks, hybrid RAG knowledge retrieval, idempotent tool calling, post-call intelligence extraction, and strict tenant isolation.
+> **Current Status**: **Phase 0 (Engineering Foundation)** and **Phase 1 (SaaS Core)** are complete.  
+> ⚠️ **Notice**: Realtime voice, telephony, WebRTC, OpenAI Realtime, and telephony carrier integrations are **NOT** implemented yet and will be delivered in future phases.
 
 ---
 
-## 🌟 Executive Summary & Problem Solved
+## 1. Product Overview
 
-Traditional business phone trees (IVRs) force callers through rigid, frustrating keypad menus ("Press 1 for hours, Press 2 for billing..."), resulting in high abandonment rates and lost customer revenue. Generic chatbots fail over voice because of high latency, robotic turn-taking, and dangerous hallucinations when quoting appointment availability or pricing.
+ReceptionAI is an enterprise-grade multi-tenant SaaS platform built to empower businesses to deploy virtual AI voice receptionists that handle phone inquiries, triage emergencies, book appointments, and capture qualified leads.
 
-**ReceptionAI** solves this with an enterprise voice orchestration engine:
-1. **Natural Spoken Conversation**: Callers talk conversationally ("I need to see a dentist tomorrow afternoon").
-2. **Deterministic Tool Grounding**: ReceptionAI never invents appointment slots or clinic policies. It invokes verified tools (`check_availability`, `search_knowledge_base`) to offer actual open slots.
-3. **Multi-Tenant SaaS Foundation**: Fully isolated workspaces, role-based access control (RBAC), and server-side tenant scoping across every database query.
-4. **Instant Browser Testing (Demo Mode)**: Includes a zero-setup, high-fidelity WebRTC/voice simulator allowing visitors to experience live calls immediately.
+Phase 0 & Phase 1 establish the engineering foundation, cryptographic security, multi-tenant workspace isolation, centralized RBAC, session management, and immutable audit logs.
 
 ---
 
-## 🏛 Architecture Overview
+## 2. Tenancy Hierarchy
 
-```mermaid
-graph TD
-    Caller[Caller: WebRTC Browser Console / Telephony SIP] -->|Audio Stream| VoiceGW[Realtime Voice Gateway]
-    VoiceGW -->|Ephemeral Session| Agent[OpenAI Realtime Agent / Simulator]
-    
-    subgraph SaaS Platform
-        App[Next.js 14 App Router Fullstack]
-        App -->|Tenant Isolation Layer| Postgres[(PostgreSQL 16 + pgvector)]
-        App -->|Caching & Sessions| Redis[(Redis 7)]
-    end
-
-    Agent -->|Tool Invocation| ToolGW[Tool Execution Gateway]
-    ToolGW -->|Tenant Verification| Services[Business Engine]
-    
-    subgraph Business Engine
-        RAG[pgvector Hybrid Knowledge Base]
-        Calendar[Deterministic Scheduling Engine]
-        CRM[Contacts & Leads Pipeline]
-        Router[Emergency & Department Transfer]
-    end
-
-    Services --> Postgres
-    VoiceGW -->|Call Completed| PostCall[Post-Call Intelligence Pipeline]
-    PostCall -->|Structured Summary & Sentiment| Postgres
+```text
+User
+ └── Workspace Membership
+      └── Workspace
+           ├── Receptionists (Phase 2)
+           ├── Knowledge Base (Phase 2)
+           ├── Calls (Phase 3)
+           ├── Contacts (Phase 3)
+           ├── Leads (Phase 3)
+           ├── Appointments (Phase 3)
+           ├── Integrations (Phase 3)
+           └── Audit Logs (Phase 1)
 ```
 
 ---
 
-## 🚀 Key Modules & Capabilities
+## 3. Monorepo Structure
 
-### 1. Realtime Voice Playground (`/dashboard/playground`)
-- Dual-mode test console: WebRTC audio session & interactive text simulation.
-- Real-time audio waveform visualizer.
-- Live speaker-separated transcript.
-- Live agent event stream displaying tool invocations, duration in milliseconds, inputs, outputs, and retrieved RAG chunks.
-- Pre-configured scenarios:
-  - *Book Dental Cleaning Tomorrow Afternoon*
-  - *Insurance & Pricing Inquiry*
-  - *Severe Toothache Emergency (Dr. Vance Transfer)*
-  - *Leave Structured Callback Message*
-
-### 2. AI Receptionist Builder (`/dashboard/receptionists/[id]`)
-- **Identity**: Name, Role, Industry, Language, and Internal Description.
-- **Voice & Speech**: Realtime models (Alloy, Echo, Shimmer, Ash, Ballad, Coral, Sage, Verse), speaking speed, style, interruption handling, response length preference.
-- **Personality**: Trait presets (Professional, Friendly, Warm, Formal, Concise, Energetic, Calm).
-- **Greetings & Hours**: Business-hours greeting, after-hours greeting, and holiday protocols.
-- **Instructions**: Multi-layered prompt editor (Safety > Policy > Business > RAG > Spoken style).
-- **Objectives**: Toggleable objectives dynamically enabling corresponding toolsets.
-
-### 3. Deep Call Inspection (`/dashboard/calls/[id]`)
-- High-fidelity audio player with scrubbable waveform track.
-- Structured AI executive summary with intent and sentiment tags.
-- Extracted caller details (Name, phone, service, preferred time, customer type).
-- Speaker-separated transcript timeline.
-- Tool execution waterfall showing inputs, outputs, and execution duration in ms.
-- RAG document citations demonstrating exact knowledge chunks consulted.
-
-### 4. Deterministic Calendar & Scheduling (`/dashboard/appointments`)
-- Real calendar slot query (`check_availability`) and confirmed bookings (`book_appointment`).
-- Patient contact creation with automated SMS confirmation dispatch simulation.
-
-### 5. Leads Kanban Pipeline (`/dashboard/leads`)
-- Automatic qualification of inbound prospects.
-- Pipeline stages: `NEW` $\to$ `QUALIFIED` $\to$ `CONTACTED` $\to$ `APPOINTMENT` $\to$ `WON`.
-
-### 6. Hybrid RAG Knowledge Engine (`/dashboard/knowledge`)
-- Ingestion of business guides, insurance policies, location details, and pricing.
-- Vector similarity + full-text search with strict tenant boundary filtering.
-- Interactive test query tool for real-time verification of retrieval accuracy.
+```text
+reception-ai/
+│
+├── apps/
+│   ├── web/                # Next.js 14 App Router frontend (Tailwind CSS, shadcn/ui style)
+│   ├── api/                # Fastify backend API with modular routes & plugins
+│   ├── realtime-gateway/   # Minimal bootstrap stub (ready for Phase 3 voice streaming)
+│   └── worker/             # Minimal bootstrap stub (ready for Phase 3 background tasks)
+│
+├── packages/
+│   ├── db/                 # Prisma PostgreSQL schema, client, migrations, & seeds
+│   ├── config/             # Zod environment validation & role permissions matrix
+│   ├── validation/         # Shared request and domain validation schemas
+│   ├── security/           # Opaque token hashing, bcrypt password security, & RBAC
+│   ├── observability/      # Structured Pino logging with automatic secret redaction
+│   └── ui/                 # Reusable UI component library primitives
+│
+├── infrastructure/
+│   └── docker/             # Docker Compose for PostgreSQL 16 & Redis 7
+│
+├── docs/
+│   ├── architecture/       # System architecture and request flow diagrams
+│   ├── security/           # Authentication, session hashing, & tenancy isolation
+│   └── development/        # Local development setup and instructions
+│
+├── .github/
+│   └── workflows/ci.yml    # GitHub Actions workflow (format, lint, typecheck, test, build)
+│
+├── package.json
+├── pnpm-workspace.yaml
+├── turbo.json
+└── tsconfig.base.json
+```
 
 ---
 
-## 🛠 Tech Stack
-
-| Layer | Technology | Rationale |
-|---|---|---|
-| **Frontend** | Next.js 14 (App Router), React 18, TypeScript | High information density, modern SSR/CSR, zero port conflicts |
-| **Styling** | Tailwind CSS, Lucide Icons, Glassmorphism CSS | Rich, modern dark-mode enterprise SaaS aesthetic |
-| **Database** | PostgreSQL 16 with `pgvector` extension | Relational multi-tenancy + native vector similarity search |
-| **ORM** | Prisma ORM | Type-safe queries with automated migrations |
-| **Cache / Queue** | Redis 7 | High-speed ephemeral sessions & BullMQ job queuing |
-| **AI Voice** | OpenAI Realtime API + High-Fidelity Simulator | Sub-400ms speech-to-speech with zero-key fallback |
-
----
-
-## 💻 Local Setup & Quickstart
+## 4. Getting Started
 
 ### Prerequisites
-- Node.js v18+ (tested on Node v24)
-- Docker Desktop (for PostgreSQL + pgvector and Redis)
 
-### 1. Clone & Install
+- Node.js `>= 20.0.0`
+- `pnpm` (`npm install -g pnpm`)
+- Docker & Docker Compose
+
+### Step 1: Start PostgreSQL & Redis
+
 ```bash
-git clone https://github.com/your-username/ReceptionAI.git
-cd ReceptionAI
-npm install
+docker compose -f infrastructure/docker/docker-compose.yml up -d
 ```
 
-### 2. Start PostgreSQL & Redis Containers
-```bash
-npm run db:up
-```
-*Note: Configured on ports 5433 (Postgres) and 6380 (Redis) to guarantee zero port collisions.*
+### Step 2: Install Dependencies
 
-### 3. Initialize & Seed Database
 ```bash
-npm run db:push
-npm run db:seed
+pnpm install
 ```
-*This populates the database with **Bright Dental**, receptionist **Ava**, **Sterling Legal**, receptionist **Emma**, and 250 realistic calls, appointments, leads, and knowledge base chunks.*
 
-### 4. Start Development Server
+### Step 3: Run Database Migrations & Seed Data
+
 ```bash
-npm run dev
+pnpm db:push
+pnpm db:seed
 ```
-Open **[http://localhost:3000](http://localhost:3000)** in your browser!
+
+Default local development credentials:
+
+- **Email**: `demo@brightdental.com`
+- **Password**: `password123`
+- **Workspace**: Bright Dental (`slug: bright-dental`)
+
+### Step 4: Run Development Servers
+
+```bash
+pnpm dev
+```
+
+- **Frontend Application**: [http://localhost:3000](http://localhost:3000)
+- **Fastify API Backend**: [http://localhost:4000/api/v1/health](http://localhost:4000/api/v1/health)
 
 ---
 
-## 🧪 Testing the Flagship Voice Demo
+## 5. Verification & Testing
 
-1. Navigate to **[http://localhost:3000/dashboard/playground](http://localhost:3000/dashboard/playground)**.
-2. Click **"Book Dental Cleaning Tomorrow"** or click **"Start New Voice Call"**.
-3. Hear Ava greet you: *"Thank you for calling Bright Dental. This is Ava. How may I help you today?"*
-4. Ask to book an appointment for tomorrow afternoon.
-5. Watch Ava invoke `check_availability` in 220ms and present 1:30 PM and 3:00 PM slots.
-6. Confirm the 3:00 PM slot. Ava calls `book_appointment` and triggers SMS confirmation.
-7. Click **"End & Save"**. The call is analyzed by the post-call intelligence pipeline.
-8. Click **"Inspect Call Record"** to view the transcript, AI summary, and tool waterfall.
+Execute the complete quality validation pipeline:
 
----
-
-## 🔒 Security & Tenant Isolation
-
-- **Tenant Boundary Enforcement**: Every database query is scoped to `workspaceId`. Front-end workspace IDs are verified against session memberships.
-- **Tool Idempotency**: Double-booking prevention using unique session tokens.
-- **Anti-Prompt Injection Defense**: Layered prompt compiler prevents callers from overriding system policies.
-- **Hashed Secrets**: API keys (`rai_live_...`) and webhook secrets are stored using secure SHA-256 bcrypt hashes.
+```bash
+pnpm format:check   # Verifies code formatting with Prettier
+pnpm lint           # Runs ESLint across all apps and packages
+pnpm typecheck      # Runs strict TypeScript checks across monorepo
+pnpm test           # Executes Vitest integration tests (auth, tenancy, RBAC)
+pnpm build          # Generates production builds via Turborepo
+```
 
 ---
 
-## 📄 License
-MIT License. Created for commercial and portfolio demonstration.
+## 6. Security Controls
+
+- **Opaque Session Tokens**: Cryptographically random 64-character tokens stored exclusively as SHA-256 hashes in PostgreSQL; cookies transmitted with `httpOnly`, `sameSite: lax`, and `secure`.
+- **Tenant Isolation**: Every tenant query requires explicit workspace membership verification; client-supplied workspace identifiers are never trusted for authorization.
+- **Last-Owner Safeguards**: A workspace's only active owner cannot be removed or demoted.
+- **Audit Trails**: Administrative operations (workspace updates, member invites, role changes, session revocations) are recorded as immutable audit log entries.

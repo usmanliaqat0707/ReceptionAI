@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: receptionai
+          POSTGRES_PASSWORD: receptionai_password
+          POSTGRES_DB: receptionai_db
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11.25.0
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+        env:
+          DATABASE_URL: postgresql://receptionai:receptionai_password@127.0.0.1:5433/receptionai_db?schema=public
+
+      - name: Push Database Schema
+        run: pnpm db:push
+        env:
+          DATABASE_URL: postgresql://receptionai:receptionai_password@127.0.0.1:5433/receptionai_db?schema=public
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Run Test Suites
+        run: pnpm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://receptionai:receptionai_password@127.0.0.1:5433/receptionai_db?schema=public
+          REDIS_URL: redis://127.0.0.1:6380
+          SESSION_SECRET: test_session_secret_at_least_32_characters_long_ci
+
+      - name: Build Project
+        run: pnpm build
+        env:
+          DATABASE_URL: postgresql://receptionai:receptionai_password@127.0.0.1:5433/receptionai_db?schema=public
+          REDIS_URL: redis://127.0.0.1:6380
+          SESSION_SECRET: test_session_secret_at_least_32_characters_long_ci

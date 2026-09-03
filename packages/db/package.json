@@ -2,23 +2,27 @@
   "name": "@receptionai/db",
   "version": "1.0.0",
   "private": true,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "generate": "prisma generate",
+    "migrate": "prisma db push",
     "push": "prisma db push",
     "seed": "tsx src/seed.ts",
-    "studio": "prisma studio"
+    "reset": "prisma db push --force-reset && tsx src/seed.ts",
+    "studio": "prisma studio",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo ok"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "dotenv": "^16.4.7"
+    "@receptionai/security": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^20.17.6",
     "prisma": "^5.22.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3",
-    "@types/node": "^22.9.0"
+    "typescript": "^5.6.3"
   }
 }

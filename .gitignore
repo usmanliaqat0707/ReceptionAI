@@ -3,11 +3,13 @@ node_modules
 .pnp
 .pnp.js
 
-# Next.js build output
+# Next.js & build output
 .next/
 out/
 build/
 dist/
+.turbo/
+*.tsbuildinfo
 
 # Environment variables
 .env*.local
