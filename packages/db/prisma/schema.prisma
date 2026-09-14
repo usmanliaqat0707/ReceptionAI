@@ -43,6 +43,254 @@ enum ActorType {
   USER
   SYSTEM
   API_KEY
+  AI_RECEPTIONIST
+}
+
+enum ReceptionistStatus {
+  DRAFT
+  TESTING
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum TransferDestinationType {
+  PHONE
+  SIP
+  INTERNAL_QUEUE
+}
+
+enum TransferDestinationStatus {
+  ACTIVE
+  DISABLED
+  ARCHIVED
+}
+
+enum ReceptionistTransferPurpose {
+  GENERAL
+  SALES
+  SUPPORT
+  EMERGENCY
+  BILLING
+  CUSTOM
+}
+
+enum BusinessHoursStrategy {
+  USE_WORKSPACE_HOURS
+  CUSTOM_HOURS
+  ALWAYS_AVAILABLE
+}
+
+enum RealtimeTestSessionStatus {
+  CREATED
+  CONNECTING
+  CONNECTED
+  ENDING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+enum RealtimeTestConversationRole {
+  USER
+  ASSISTANT
+}
+
+enum ContactSource {
+  MANUAL
+  VOICE_RECEPTIONIST
+  IMPORT
+  INTEGRATION
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  CONTACTED
+  APPOINTMENT
+  WON
+  LOST
+  ARCHIVED
+}
+
+enum LeadSource {
+  MANUAL
+  VOICE_RECEPTIONIST
+  IMPORT
+  INTEGRATION
+  WEB
+  OTHER
+}
+
+enum MessageStatus {
+  NEW
+  READ
+  IN_PROGRESS
+  RESOLVED
+  ARCHIVED
+}
+
+enum MessageUrgency {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum CallbackWindow {
+  MORNING
+  AFTERNOON
+  EVENING
+  ANYTIME
+}
+
+enum ToolExecutionStatus {
+  RECEIVED
+  VALIDATING
+  EXECUTING
+  SUCCEEDED
+  FAILED
+  REJECTED
+}
+
+enum ConfirmationStatus {
+  PENDING
+  CONFIRMED
+  CONSUMED
+  EXPIRED
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  RESCHEDULED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+  FAILED
+}
+
+enum AppointmentSource {
+  MANUAL
+  VOICE_RECEPTIONIST
+  INTEGRATION
+  IMPORT
+}
+
+enum CalendarProviderType {
+  INTERNAL_DEMO
+  GOOGLE_CALENDAR
+}
+
+enum CalendarIntegrationStatus {
+  CONNECTED
+  REAUTH_REQUIRED
+  DISCONNECTED
+  ERROR
+}
+
+enum AppointmentOperationType {
+  CREATE
+  RESCHEDULE
+  CANCEL
+}
+
+enum AppointmentOperationStatus {
+  PENDING_PROVIDER
+  PROVIDER_SUCCEEDED
+  LOCAL_SUCCEEDED
+  COMPENSATION_REQUIRED
+  FAILED
+}
+
+enum AppointmentChangeType {
+  CREATED
+  RESCHEDULED
+  CANCELLED
+  STATUS_CHANGED
+}
+
+enum KnowledgeSourceType {
+  WEBSITE
+  SITEMAP
+  PDF
+  DOCX
+  TXT
+  MARKDOWN
+  MANUAL
+  FAQ
+}
+
+enum KnowledgeSourceStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  STALE
+  ARCHIVED
+}
+
+enum KnowledgeDocumentStatus {
+  ACTIVE
+  RETIRED
+  FAILED
+}
+
+enum KnowledgeIndexGenerationStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum CommunicationChannel {
+  SMS
+  EMAIL
+}
+
+enum CommunicationPurpose {
+  APPOINTMENT_CONFIRMATION
+  APPOINTMENT_RESCHEDULE
+  APPOINTMENT_CANCELLATION
+  CALLBACK_CONFIRMATION
+  MESSAGE_RECEIVED_CONFIRMATION
+  LEAD_FOLLOWUP_NOTICE
+  TEAM_NEW_MESSAGE_ALERT
+  TEAM_NEW_LEAD_ALERT
+  CUSTOM_TRANSACTIONAL
+}
+
+enum CommunicationStatus {
+  PENDING
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  FAILED
+  SUPPRESSED
+  CANCELLED
+}
+
+enum TemplateStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+enum SuppressionReason {
+  USER_OPTOUT
+  HARD_BOUNCE
+  INVALID_ADDRESS
+  ADMIN_BLOCK
+  PROVIDER_BLOCK
+}
+
+enum CommunicationSourceType {
+  APPOINTMENT
+  MESSAGE
+  CALLBACK
+  LEAD
+  MANUAL_TEST
 }
 
 model User {
@@ -62,6 +310,13 @@ model User {
   passwordResetTokens PasswordResetToken[]
   auditLogs         AuditLog[]
 
+  createdReceptionists Receptionist[] @relation("ReceptionistCreator")
+  updatedReceptionists Receptionist[] @relation("ReceptionistUpdater")
+  configurationSnapshots ReceptionistConfigurationVersion[]
+  realtimeTestSessions   RealtimeTestSession[]
+  assignedLeads          Lead[]
+  receivedMessages       ReceptionistMessage[]
+
   @@index([email])
   @@map("users")
 }
@@ -79,6 +334,36 @@ model Workspace {
   memberships WorkspaceMembership[]
   invitations WorkspaceInvitation[]
   auditLogs   AuditLog[]
+
+  receptionists        Receptionist[]
+  transferDestinations TransferDestination[]
+  businessHours        BusinessHour[]
+  specialHours         SpecialHour[]
+  configurationSnapshots ReceptionistConfigurationVersion[]
+  realtimeTestSessions   RealtimeTestSession[]
+  realtimeConversationItems RealtimeTestConversationItem[]
+  businessProfile        BusinessProfile?
+  contacts               Contact[]
+  leads                  Lead[]
+  messages               ReceptionistMessage[]
+  toolExecutions         ReceptionistToolExecution[]
+  confirmations          ConversationConfirmation[]
+  knowledgeSources       KnowledgeSource[]
+  knowledgeDocuments     KnowledgeDocument[]
+  knowledgeChunks        KnowledgeChunk[]
+  knowledgeGenerations   KnowledgeIndexGeneration[]
+  services               Service[]
+  calendarIntegrations   CalendarIntegration[]
+  appointments           Appointment[]
+  appointmentOperations  AppointmentOperation[]
+  appointmentChanges     AppointmentChange[]
+  appointmentPolicy      AppointmentPolicy?
+  communications         OutboundCommunication[]
+  communicationDeliveryAttempts CommunicationDeliveryAttempt[]
+  communicationTemplates CommunicationTemplate[]
+  communicationSettings  WorkspaceCommunicationSettings?
+  communicationPreferences ContactCommunicationPreference[]
+  communicationSuppressions CommunicationSuppression[]
 
   @@index([slug])
   @@map("workspaces")
@@ -189,3 +474,843 @@ model AuditLog {
   @@index([workspaceId, createdAt])
   @@map("audit_logs")
 }
+
+model Receptionist {
+  id                    String              @id @default(cuid())
+  workspaceId           String
+  name                  String
+  slug                  String
+  description           String?
+  roleTitle             String              @default("Front Desk Receptionist")
+  industry              String              @default("GENERAL")
+  primaryLanguage       String              @default("en-US")
+  status                ReceptionistStatus  @default(DRAFT)
+
+  greeting              String?
+  afterHoursGreeting    String?
+  instructions          String?
+
+  voiceConfig           Json?
+  personalityConfig     Json?
+  objectiveConfig       Json?
+  behaviorConfig        Json?
+  businessHoursStrategy BusinessHoursStrategy @default(USE_WORKSPACE_HOURS)
+  customHours           Json?
+  afterHoursConfig      Json?
+  escalationConfig      Json?
+
+  configurationVersion  Int                 @default(1)
+  createdByUserId       String?
+  updatedByUserId       String?
+  archivedAt            DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  workspace             Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdByUser         User?               @relation("ReceptionistCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUser         User?               @relation("ReceptionistUpdater", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  transferDestinations  ReceptionistTransferDestination[]
+  snapshots             ReceptionistConfigurationVersion[]
+  testSessions          RealtimeTestSession[]
+  leads                 Lead[]
+  messages              ReceptionistMessage[]
+  toolExecutions        ReceptionistToolExecution[]
+  knowledgeSources      ReceptionistKnowledgeSource[]
+  appointments          Appointment[]
+  services              ReceptionistService[]
+  communications        OutboundCommunication[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, updatedAt])
+  @@map("receptionists")
+}
+
+model TransferDestination {
+  id               String                    @id @default(cuid())
+  workspaceId      String
+  name             String
+  type             TransferDestinationType   @default(PHONE)
+  destination      String                    // E.164 phone number, SIP URI, or queue identifier
+  status           TransferDestinationStatus @default(ACTIVE)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  workspace        Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  receptionistLinks ReceptionistTransferDestination[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, status])
+  @@map("transfer_destinations")
+}
+
+model ReceptionistTransferDestination {
+  id                    String                      @id @default(cuid())
+  receptionistId        String
+  transferDestinationId String
+  priority              Int                         @default(1)
+  purpose               ReceptionistTransferPurpose @default(GENERAL)
+  enabled               Boolean                     @default(true)
+
+  receptionist          Receptionist                @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+  transferDestination   TransferDestination         @relation(fields: [transferDestinationId], references: [id], onDelete: Cascade)
+
+  @@unique([receptionistId, transferDestinationId])
+  @@index([receptionistId])
+  @@index([transferDestinationId])
+  @@map("receptionist_transfer_destinations")
+}
+
+model ReceptionistConfigurationVersion {
+  id              String             @id @default(cuid())
+  workspaceId     String
+  receptionistId  String
+  version         Int
+  snapshot        Json
+  triggerStatus   ReceptionistStatus
+  createdByUserId String?
+  createdAt       DateTime           @default(now())
+
+  workspace       Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  receptionist    Receptionist       @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+  createdByUser   User?              @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([receptionistId, version])
+  @@index([workspaceId])
+  @@index([receptionistId])
+  @@map("receptionist_configuration_versions")
+}
+
+model BusinessHour {
+  id          String    @id @default(cuid())
+  workspaceId String
+  dayOfWeek   Int       // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  openTime    String    // HH:MM (e.g. "09:00")
+  closeTime   String    // HH:MM (e.g. "17:00")
+  enabled     Boolean   @default(true)
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, dayOfWeek])
+  @@index([workspaceId])
+  @@map("business_hours")
+}
+
+model SpecialHour {
+  id          String    @id @default(cuid())
+  workspaceId String
+  date        DateTime  // Specific calendar day
+  openTime    String?   // HH:MM
+  closeTime   String?   // HH:MM
+  closed      Boolean   @default(false)
+  note        String?
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, date])
+  @@map("special_hours")
+}
+
+model RealtimeTestSession {
+  id                   String                    @id @default(cuid())
+  workspaceId          String
+  receptionistId       String
+  configurationVersion Int
+  createdByUserId      String?
+
+  status               RealtimeTestSessionStatus @default(CREATED)
+  provider             String                    @default("openai")
+  model                String                    @default("gpt-realtime-2.1")
+
+  startedAt            DateTime                  @default(now())
+  connectedAt          DateTime?
+  endedAt              DateTime?
+  durationSeconds      Int                       @default(0)
+
+  disconnectReason     String?
+  errorCode            String?
+  metadata             Json?
+
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  workspace            Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  receptionist         Receptionist              @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+  createdByUser        User?                     @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  conversationItems    RealtimeTestConversationItem[]
+  leads                Lead[]
+  messages             ReceptionistMessage[]
+  toolExecutions       ReceptionistToolExecution[]
+  confirmations        ConversationConfirmation[]
+  appointments         Appointment[]
+  appointmentOperations AppointmentOperation[]
+  communications       OutboundCommunication[]
+
+  @@index([workspaceId, createdAt])
+  @@index([receptionistId, createdAt])
+  @@index([status])
+  @@map("realtime_test_sessions")
+}
+
+model RealtimeTestConversationItem {
+  id             String                       @id @default(cuid())
+  workspaceId    String
+  testSessionId  String
+  providerItemId String?
+  sequence       Int                          @default(0)
+  role           RealtimeTestConversationRole
+  type           String                       @default("message")
+  text           String
+  status         String                       @default("completed")
+  startedAt      DateTime?
+  completedAt    DateTime?
+  metadata       Json?
+  createdAt      DateTime                     @default(now())
+
+  workspace      Workspace                    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  testSession    RealtimeTestSession          @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+
+  @@index([testSessionId, sequence])
+  @@index([workspaceId, createdAt])
+  @@map("realtime_test_conversation_items")
+}
+
+model BusinessProfile {
+  id           String    @id @default(cuid())
+  workspaceId  String    @unique
+  businessName String
+  legalName    String?
+  description  String?
+  phone        String?
+  email        String?
+  website      String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  region       String?
+  postalCode   String?
+  country      String?   @default("US")
+  timezone     String    @default("America/New_York")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("business_profiles")
+}
+
+model Contact {
+  id              String         @id @default(cuid())
+  workspaceId     String
+  firstName       String
+  lastName        String?
+  phone           String?
+  normalizedPhone String?
+  email           String?
+  normalizedEmail String?
+  company         String?
+  source          ContactSource  @default(VOICE_RECEPTIONIST)
+  phoneVerifiedAt DateTime?
+  emailVerifiedAt DateTime?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  archivedAt      DateTime?
+
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  leads           Lead[]
+  messages        ReceptionistMessage[]
+  appointments    Appointment[]
+  communications  OutboundCommunication[]
+  communicationPreference ContactCommunicationPreference?
+
+  @@index([workspaceId, normalizedPhone])
+  @@index([workspaceId, normalizedEmail])
+  @@index([workspaceId, createdAt])
+  @@map("contacts")
+}
+
+model Lead {
+  id                   String        @id @default(cuid())
+  workspaceId          String
+  contactId            String
+  receptionistId       String?
+  testSessionId        String?
+  status               LeadStatus    @default(NEW)
+  source               LeadSource    @default(VOICE_RECEPTIONIST)
+  intent               String
+  qualification        String?
+  notes                String?
+  assignedUserId       String?
+  estimatedValue       Float?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  archivedAt           DateTime?
+
+  workspace            Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact              Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  receptionist         Receptionist? @relation(fields: [receptionistId], references: [id], onDelete: SetNull)
+  testSession          RealtimeTestSession? @relation(fields: [testSessionId], references: [id], onDelete: SetNull)
+  assignedUser         User?         @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, contactId])
+  @@index([workspaceId, createdAt])
+  @@map("leads")
+}
+
+model ReceptionistMessage {
+  id                     String          @id @default(cuid())
+  workspaceId            String
+  contactId              String
+  receptionistId         String?
+  testSessionId          String?
+  recipientUserId        String?
+  subject                String
+  body                   String
+  urgency                MessageUrgency  @default(NORMAL)
+  callbackRequested      Boolean         @default(false)
+  requestedCallbackAt    DateTime?
+  requestedCallbackWindow CallbackWindow?
+  status                 MessageStatus   @default(NEW)
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  workspace              Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact                Contact         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  receptionist           Receptionist?   @relation(fields: [receptionistId], references: [id], onDelete: SetNull)
+  testSession            RealtimeTestSession? @relation(fields: [testSessionId], references: [id], onDelete: SetNull)
+  recipientUser          User?           @relation(fields: [recipientUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, contactId])
+  @@index([workspaceId, createdAt])
+  @@map("receptionist_messages")
+}
+
+model ReceptionistToolExecution {
+  id                   String              @id @default(cuid())
+  workspaceId          String
+  receptionistId       String
+  testSessionId        String
+  configurationVersion Int
+  toolCallId           String
+  toolName             String
+  status               ToolExecutionStatus @default(RECEIVED)
+  inputJson            Json?
+  outputJson           Json?
+  errorCode            String?
+  errorMessageSafe     String?
+  durationMs           Int                 @default(0)
+  idempotencyKey       String
+  createdAt            DateTime            @default(now())
+  startedAt            DateTime?
+  completedAt          DateTime?
+
+  workspace            Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  receptionist         Receptionist        @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+  testSession          RealtimeTestSession @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([testSessionId, toolCallId])
+  @@index([workspaceId, createdAt])
+  @@index([testSessionId, createdAt])
+  @@index([workspaceId, toolName])
+  @@map("receptionist_tool_executions")
+}
+
+model ConversationConfirmation {
+  id            String             @id @default(cuid())
+  workspaceId   String
+  testSessionId String
+  action        String
+  target        String?
+  payloadHash   String
+  status        ConfirmationStatus @default(PENDING)
+  expiresAt     DateTime
+  confirmedAt   DateTime?
+  consumedAt    DateTime?
+  createdAt     DateTime           @default(now())
+
+  workspace     Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  testSession   RealtimeTestSession @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+
+  @@index([testSessionId, action])
+  @@index([workspaceId, status])
+  @@map("conversation_confirmations")
+}
+
+model KnowledgeSource {
+  id                      String                 @id @default(cuid())
+  workspaceId             String
+  type                    KnowledgeSourceType
+  name                    String
+  description             String?
+  status                  KnowledgeSourceStatus  @default(PENDING)
+  sourceUrl               String?
+  storageKey              String?
+  configuration           Json?
+  embeddingProvider       String                 @default("openai")
+  embeddingModel          String                 @default("text-embedding-3-small")
+  activeGenerationId      String?
+  createdByUserId         String?
+  updatedByUserId         String?
+  lastIndexedAt           DateTime?
+  lastSuccessfulIndexedAt DateTime?
+  errorCode               String?
+  errorMessageSafe        String?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  archivedAt              DateTime?
+
+  workspace               Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  documents               KnowledgeDocument[]
+  chunks                  KnowledgeChunk[]
+  generations             KnowledgeIndexGeneration[]
+  receptionists           ReceptionistKnowledgeSource[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, type])
+  @@index([workspaceId, createdAt])
+  @@map("knowledge_sources")
+}
+
+model KnowledgeDocument {
+  id           String                  @id @default(cuid())
+  workspaceId  String
+  sourceId     String
+  generationId String?
+  externalId   String?
+  externalUrl  String?
+  title        String
+  mimeType     String                  @default("text/plain")
+  contentHash  String
+  status       KnowledgeDocumentStatus @default(ACTIVE)
+  metadata     Json?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  indexedAt    DateTime?
+  archivedAt   DateTime?
+
+  workspace    Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  source       KnowledgeSource         @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  generation   KnowledgeIndexGeneration? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  chunks       KnowledgeChunk[]
+
+  @@index([sourceId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, contentHash])
+  @@map("knowledge_documents")
+}
+
+model KnowledgeChunk {
+  id             String                   @id @default(cuid())
+  workspaceId    String
+  sourceId       String
+  documentId     String
+  generationId   String?
+  chunkIndex     Int                      @default(0)
+  content        String                   @db.Text
+  contentHash    String
+  tokenCount     Int                      @default(0)
+  headingPath    String?
+  metadata       Json?
+  embedding      Unsupported("vector(1536)")?
+  embeddingModel String                   @default("text-embedding-3-small")
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  workspace      Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  source         KnowledgeSource          @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  document       KnowledgeDocument        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  generation     KnowledgeIndexGeneration? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([sourceId])
+  @@index([documentId])
+  @@index([workspaceId, contentHash])
+  @@map("knowledge_chunks")
+}
+
+model ReceptionistKnowledgeSource {
+  receptionistId    String
+  knowledgeSourceId String
+  createdAt         DateTime        @default(now())
+
+  receptionist      Receptionist    @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+  knowledgeSource   KnowledgeSource @relation(fields: [knowledgeSourceId], references: [id], onDelete: Cascade)
+
+  @@id([receptionistId, knowledgeSourceId])
+  @@index([receptionistId])
+  @@index([knowledgeSourceId])
+  @@map("receptionist_knowledge_sources")
+}
+
+model KnowledgeIndexGeneration {
+  id               String                         @id @default(cuid())
+  workspaceId      String
+  sourceId         String
+  generation       Int                            @default(1)
+  status           KnowledgeIndexGenerationStatus @default(PROCESSING)
+  startedAt        DateTime                       @default(now())
+  completedAt      DateTime?
+  embeddingModel   String                         @default("text-embedding-3-small")
+  documentCount    Int                            @default(0)
+  chunkCount       Int                            @default(0)
+  errorMessageSafe String?
+  createdAt        DateTime                       @default(now())
+
+  workspace        Workspace                      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  source           KnowledgeSource                @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  documents        KnowledgeDocument[]
+  chunks           KnowledgeChunk[]
+
+  @@index([sourceId, generation])
+  @@index([workspaceId, status])
+  @@map("knowledge_index_generations")
+}
+
+model Service {
+  id                   String            @id @default(cuid())
+  workspaceId          String
+  name                 String
+  description          String?
+  durationMinutes      Int               @default(30)
+  bufferBeforeMinutes  Int               @default(0)
+  bufferAfterMinutes   Int               @default(0)
+  priceText            String?
+  active               Boolean           @default(true)
+  calendarIntegrationId String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  archivedAt           DateTime?
+
+  workspace            Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  calendarIntegration  CalendarIntegration? @relation(fields: [calendarIntegrationId], references: [id], onDelete: SetNull)
+  appointments         Appointment[]
+  receptionistServices ReceptionistService[]
+
+  @@index([workspaceId, active])
+  @@index([workspaceId, archivedAt])
+  @@map("services")
+}
+
+model CalendarIntegration {
+  id                   String                    @id @default(cuid())
+  workspaceId          String
+  provider             CalendarProviderType      @default(INTERNAL_DEMO)
+  name                 String
+  status               CalendarIntegrationStatus @default(CONNECTED)
+  externalAccountId    String?
+  externalCalendarId   String?
+  encryptedCredentials String?                   @db.Text
+  tokenExpiresAt       DateTime?
+  configuration        Json?
+  createdByUserId      String?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  disconnectedAt       DateTime?
+
+  workspace            Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  services             Service[]
+  appointments         Appointment[]
+
+  @@index([workspaceId, provider])
+  @@index([workspaceId, status])
+  @@map("calendar_integrations")
+}
+
+model Appointment {
+  id                    String            @id @default(cuid())
+  workspaceId           String
+  contactId             String
+  receptionistId        String?
+  testSessionId         String?
+  serviceId             String
+  calendarIntegrationId String
+  externalCalendarId    String?
+  externalEventId       String?
+  startAt               DateTime
+  endAt                 DateTime
+  timezone              String            @default("America/New_York")
+  status                AppointmentStatus @default(CONFIRMED)
+  title                 String
+  notes                 String?           @db.Text
+  source                AppointmentSource @default(VOICE_RECEPTIONIST)
+  createdByActorType    ActorType         @default(USER)
+  createdByUserId       String?
+  version               Int               @default(1)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  cancelledAt           DateTime?
+  completedAt           DateTime?
+
+  workspace             Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact               Contact           @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  receptionist          Receptionist?     @relation(fields: [receptionistId], references: [id], onDelete: SetNull)
+  testSession           RealtimeTestSession? @relation(fields: [testSessionId], references: [id], onDelete: SetNull)
+  service               Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  calendarIntegration   CalendarIntegration @relation(fields: [calendarIntegrationId], references: [id], onDelete: Cascade)
+  changes               AppointmentChange[]
+  communications        OutboundCommunication[]
+
+  @@index([workspaceId, startAt])
+  @@index([workspaceId, status])
+  @@index([contactId])
+  @@index([serviceId])
+  @@index([calendarIntegrationId])
+  @@index([externalCalendarId, externalEventId])
+  @@map("appointments")
+}
+
+model AppointmentOperation {
+  id               String                     @id @default(cuid())
+  workspaceId      String
+  testSessionId    String?
+  toolExecutionId  String?
+  type             AppointmentOperationType
+  status           AppointmentOperationStatus @default(PENDING_PROVIDER)
+  externalEventId  String?
+  appointmentId    String?
+  idempotencyKey   String
+  errorCode        String?
+  errorMessageSafe String?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+
+  workspace        Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  testSession      RealtimeTestSession?       @relation(fields: [testSessionId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, idempotencyKey])
+  @@index([workspaceId, status])
+  @@map("appointment_operations")
+}
+
+model AppointmentChange {
+  id            String                @id @default(cuid())
+  workspaceId   String
+  appointmentId String
+  type          AppointmentChangeType
+  oldStartAt    DateTime?
+  oldEndAt      DateTime?
+  newStartAt    DateTime?
+  newEndAt      DateTime?
+  actorType     ActorType             @default(AI_RECEPTIONIST)
+  testSessionId String?
+  userId        String?
+  notes         String?
+  createdAt     DateTime              @default(now())
+
+  workspace     Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  appointment   Appointment           @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId, createdAt])
+  @@index([workspaceId, createdAt])
+  @@map("appointment_changes")
+}
+
+model AppointmentPolicy {
+  id                        String    @id @default(cuid())
+  workspaceId               String    @unique
+  minimumLeadTimeMinutes    Int       @default(60)
+  maximumAdvanceDays        Int       @default(90)
+  cancellationCutoffMinutes Int       @default(1440)
+  rescheduleCutoffMinutes    Int       @default(1440)
+  allowSameDay              Boolean   @default(true)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  workspace                 Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("appointment_policies")
+}
+
+model ReceptionistService {
+  receptionistId String
+  serviceId      String
+  createdAt      DateTime     @default(now())
+
+  receptionist   Receptionist @relation(fields: [receptionistId], references: [id], onDelete: Cascade)
+  service        Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([receptionistId, serviceId])
+  @@index([receptionistId])
+  @@index([serviceId])
+  @@map("receptionist_services")
+}
+
+model OutboundCommunication {
+  id                  String                  @id @default(cuid())
+  workspaceId         String
+  channel             CommunicationChannel
+  purpose             CommunicationPurpose
+  recipientContactId  String?
+  recipientAddress    String
+  templateKey         String?
+  templateVersion     Int?                    @default(1)
+  subject             String?
+  body                String                  @db.Text
+  status              CommunicationStatus     @default(PENDING)
+  sourceType          CommunicationSourceType?
+  sourceId            String?
+  appointmentId       String?
+  receptionistId      String?
+  testSessionId       String?
+  idempotencyKey      String?
+  estimatedSegments   Int?                    @default(1)
+  metadata            Json?
+
+  createdAt           DateTime                @default(now())
+  queuedAt            DateTime?
+  sentAt              DateTime?
+  deliveredAt         DateTime?
+  failedAt            DateTime?
+
+  workspace           Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recipientContact    Contact?                @relation(fields: [recipientContactId], references: [id], onDelete: SetNull)
+  receptionist        Receptionist?           @relation(fields: [receptionistId], references: [id], onDelete: SetNull)
+  testSession         RealtimeTestSession?    @relation(fields: [testSessionId], references: [id], onDelete: SetNull)
+  appointment         Appointment?            @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  deliveryAttempts    CommunicationDeliveryAttempt[]
+  providerEvents      CommunicationProviderEvent[]
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, status])
+  @@index([workspaceId, channel])
+  @@index([workspaceId, purpose])
+  @@index([workspaceId, recipientAddress])
+  @@index([workspaceId, createdAt])
+  @@index([sourceType, sourceId])
+  @@map("outbound_communications")
+}
+
+model CommunicationDeliveryAttempt {
+  id                String                  @id @default(cuid())
+  workspaceId       String
+  communicationId   String
+  provider          String
+  providerMessageId String?
+  attempt           Int                     @default(1)
+  status            CommunicationStatus
+  responseCode      Int?
+  errorCode         String?
+  errorMessageSafe  String?                 @db.Text
+  startedAt         DateTime                @default(now())
+  completedAt       DateTime?
+  createdAt         DateTime                @default(now())
+
+  workspace         Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  communication     OutboundCommunication   @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+
+  @@index([communicationId, attempt])
+  @@index([workspaceId, providerMessageId])
+  @@map("communication_delivery_attempts")
+}
+
+model CommunicationTemplate {
+  id              String               @id @default(cuid())
+  workspaceId     String
+  key             String
+  channel         CommunicationChannel
+  name            String
+  purpose         CommunicationPurpose
+  subjectTemplate String?
+  bodyTemplate    String               @db.Text
+  version         Int                  @default(1)
+  status          TemplateStatus       @default(ACTIVE)
+  variables       Json?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  workspace       Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, key, channel])
+  @@index([workspaceId, purpose])
+  @@index([workspaceId, status])
+  @@map("communication_templates")
+}
+
+model WorkspaceCommunicationSettings {
+  id                          String    @id @default(cuid())
+  workspaceId                 String    @unique
+  smsEnabled                  Boolean   @default(true)
+  emailEnabled                Boolean   @default(true)
+  defaultSmsPurposePolicy     Json?
+  defaultEmailPurposePolicy   Json?
+  quietHoursEnabled           Boolean   @default(false)
+  quietHoursStart             String?   @default("21:00")
+  quietHoursEnd               String?   @default("08:00")
+  timezone                    String    @default("America/New_York")
+  sendSmsOnBooking            Boolean   @default(true)
+  sendEmailOnBooking          Boolean   @default(true)
+  sendSmsOnReschedule         Boolean   @default(true)
+  sendEmailOnReschedule       Boolean   @default(true)
+  sendSmsOnCancellation       Boolean   @default(true)
+  sendEmailOnCancellation     Boolean   @default(true)
+  sendSmsOnCallbackRequest    Boolean   @default(true)
+  sendEmailOnCallbackRequest  Boolean   @default(false)
+  sendEmailOnNewLead          Boolean   @default(true)
+  sendEmailOnNewMessage       Boolean   @default(true)
+  teamNotificationEmails      String[]  @default([])
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+
+  workspace                   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_communication_settings")
+}
+
+model ContactCommunicationPreference {
+  id                        String    @id @default(cuid())
+  workspaceId               String
+  contactId                 String    @unique
+  smsTransactionalAllowed   Boolean   @default(true)
+  emailTransactionalAllowed Boolean   @default(true)
+  smsMarketingAllowed       Boolean   @default(false)
+  emailMarketingAllowed     Boolean   @default(false)
+  smsSuppressedAt           DateTime?
+  emailSuppressedAt         DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  workspace                 Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact                   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, contactId])
+  @@map("contact_communication_preferences")
+}
+
+model CommunicationSuppression {
+  id          String               @id @default(cuid())
+  workspaceId String
+  channel     CommunicationChannel
+  address     String
+  reason      SuppressionReason    @default(USER_OPTOUT)
+  notes       String?
+  createdAt   DateTime             @default(now())
+
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, channel, address])
+  @@index([workspaceId, channel])
+  @@map("communication_suppressions")
+}
+
+model CommunicationProviderEvent {
+  id                String                  @id @default(cuid())
+  provider          String
+  providerEventId   String                  @unique
+  communicationId   String?
+  type              String
+  payloadSafe       Json?
+  receivedAt        DateTime                @default(now())
+  processedAt       DateTime?
+
+  communication     OutboundCommunication?  @relation(fields: [communicationId], references: [id], onDelete: SetNull)
+
+  @@index([provider, providerEventId])
+  @@index([communicationId])
+  @@map("communication_provider_events")
+}
+
+

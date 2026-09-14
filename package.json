@@ -2,6 +2,8 @@
   "name": "reception-ai",
   "version": "1.0.0",
   "private": true,
+  "license": "Apache-2.0",
+  "description": "Open-source multi-tenant platform for AI voice receptionists with workspace RBAC, RAG, scheduling, and a confirmation-gated tool gateway.",
   "packageManager": "pnpm@11.25.0",
   "engines": {
     "node": ">=20.0.0"

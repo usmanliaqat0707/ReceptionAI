@@ -11,6 +11,20 @@ import { workspaceRoutes } from "./modules/workspaces/workspace.routes";
 import { membershipRoutes } from "./modules/memberships/membership.routes";
 import { securityRoutes } from "./modules/security/security.routes";
 import { auditRoutes } from "./modules/audit/audit.routes";
+import { receptionistRoutes } from "./modules/receptionists/receptionist.routes";
+import { transferDestinationRoutes } from "./modules/transfer-destinations/transfer-destination.routes";
+import { realtimeSessionRoutes } from "./modules/realtime/realtime-session.routes";
+import { toolExecutionRoutes } from "./modules/tools/tool-execution.routes";
+import { contactRoutes } from "./modules/contacts/contact.routes";
+import { leadRoutes } from "./modules/leads/lead.routes";
+import { messageRoutes } from "./modules/messages/message.routes";
+import { businessProfileRoutes } from "./modules/business-profile/business-profile.routes";
+import { knowledgeRoutes } from "./modules/knowledge/knowledge.routes";
+import { serviceRoutes } from "./modules/services/service.routes";
+import { appointmentRoutes } from "./modules/appointments/appointment.routes";
+import { calendarRoutes } from "./modules/calendar/calendar.routes";
+import { communicationRoutes } from "./modules/communications/communication.routes";
+import { communicationWebhookRoutes } from "./modules/communications/provider-webhook.routes";
 
 export function buildApp(): FastifyInstance {
   const app = fastify({
@@ -51,7 +65,13 @@ export function buildApp(): FastifyInstance {
   // CORS Configuration
   const webOrigin = process.env.WEB_URL || "http://localhost:3000";
   app.register(cors, {
-    origin: [webOrigin, "http://localhost:3000", "http://localhost:3001"],
+    origin: [
+      webOrigin,
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:3001",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
   });
@@ -141,6 +161,20 @@ export function buildApp(): FastifyInstance {
   app.register(membershipRoutes);
   app.register(securityRoutes);
   app.register(auditRoutes);
+  app.register(receptionistRoutes);
+  app.register(transferDestinationRoutes);
+  app.register(realtimeSessionRoutes);
+  app.register(toolExecutionRoutes);
+  app.register(contactRoutes);
+  app.register(leadRoutes);
+  app.register(messageRoutes);
+  app.register(businessProfileRoutes);
+  app.register(knowledgeRoutes);
+  app.register(serviceRoutes);
+  app.register(appointmentRoutes);
+  app.register(calendarRoutes);
+  app.register(communicationRoutes);
+  app.register(communicationWebhookRoutes);
 
   return app;
 }

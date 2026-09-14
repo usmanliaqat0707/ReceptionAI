@@ -17,6 +17,8 @@ import {
   LogOut,
   ChevronDown,
   Building2,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
@@ -87,7 +89,9 @@ export function Sidebar() {
     { label: "Calls", href: "/calls", icon: PhoneCall },
     { label: "Contacts", href: "/contacts", icon: Users },
     { label: "Leads", href: "/leads", icon: Target },
+    { label: "Messages", href: "/messages", icon: MessageSquare },
     { label: "Appointments", href: "/appointments", icon: Calendar },
+    { label: "Communications", href: "/communications", icon: Send },
     { label: "Knowledge Base", href: "/knowledge", icon: BookOpen },
     { label: "Integrations", href: "/integrations", icon: Boxes },
     { label: "Analytics", href: "/analytics", icon: BarChart3 },

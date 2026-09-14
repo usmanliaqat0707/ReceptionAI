@@ -2,32 +2,42 @@
 
 ## Prerequisites
 
-- Node.js 20.x LTS
-- `pnpm` (`npm install -g pnpm`)
-- Docker & Docker Compose
+- Node.js 20.x LTS (see `.nvmrc`)
+- pnpm 11.25.0 (`corepack enable` then `corepack prepare pnpm@11.25.0 --activate`)
+- Docker and Docker Compose
 
-## Quick Start Workflow
+## Quick start
 
-### 1. Start Database & Redis Infrastructure
+### 1. Copy environment defaults
 
 ```bash
-docker compose -f infrastructure/docker/docker-compose.yml up -d
+cp .env.example .env
+```
+
+OpenAI, Google Calendar, Twilio, and Resend keys are optional. Leave them
+unset to use mock embeddings, the internal demo calendar, and mock SMS/email.
+
+### 2. Start PostgreSQL (pgvector) and Redis
+
+```bash
+pnpm db:up
 ```
 
 Service mapping:
 
-- PostgreSQL 16: `127.0.0.1:5433`
+- PostgreSQL 16 with pgvector: `127.0.0.1:5433`
 - Redis 7: `127.0.0.1:6380`
 
-### 2. Install Monorepo Dependencies
+### 3. Install dependencies
 
 ```bash
 pnpm install
 ```
 
-### 3. Initialize & Seed PostgreSQL
+### 4. Initialize and seed PostgreSQL
 
 ```bash
+pnpm db:generate
 pnpm db:push
 pnpm db:seed
 ```
@@ -38,27 +48,34 @@ Seeded test accounts:
 - **Staff**: `sarah@brightdental.com` / `password123`
 - **Workspace**: Bright Dental (`slug: bright-dental`)
 
-### 4. Start Development Servers
+These credentials are for local development only. Change them before any
+shared or public deployment.
 
-To run both API backend (`:4000`) and Next.js frontend (`:3000`) concurrently:
+### 5. Start development servers
 
 ```bash
 pnpm dev
 ```
 
-Or run individually:
+Or run them separately:
 
 ```bash
-pnpm dev:api   # Runs Fastify backend on http://localhost:4000
-pnpm dev:web   # Runs Next.js frontend on http://localhost:3000
+pnpm dev:api   # Fastify on http://localhost:4000
+pnpm dev:web   # Next.js on http://localhost:3000
 ```
 
-### 5. Running Quality Checks & Tests
+- Dashboard: http://localhost:3000
+- API health: http://localhost:4000/api/v1/health
+
+### 6. Quality checks
 
 ```bash
-pnpm format:check   # Prettier validation
-pnpm lint           # ESLint across monorepo
-pnpm typecheck      # Strict TypeScript check across all packages
-pnpm test           # Vitest integration & unit tests
-pnpm build          # Turborepo production build
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
 ```
+
+See the root [README](../../README.md) and [CONTRIBUTING.md](../../CONTRIBUTING.md)
+for the project map and pull-request expectations.

@@ -75,3 +75,64 @@ export function canManageTargetRole(
 
   return false;
 }
+
+/**
+ * Validates and normalizes phone numbers into standard E.164 format.
+ * Rejects numbers that do not match E.164 (+ followed by 7 to 15 digits).
+ */
+export function normalizeE164(phone: string): string {
+  const trimmed = phone.trim();
+  // Remove formatting characters (spaces, dashes, parens)
+  const cleaned = trimmed.replace(/[\s\-\(\)\.]/g, "");
+  const e164Regex = /^\+[1-9]\d{6,14}$/;
+  if (!e164Regex.test(cleaned)) {
+    throw new Error(
+      `Invalid phone number format: "${phone}". Must be valid E.164 starting with '+' followed by 7 to 15 digits.`
+    );
+  }
+  return cleaned;
+}
+
+/**
+ * Masks a phone number for safe display in UI/logs (e.g. "+15555550100" -> "+1 555 *** 0100").
+ */
+export function maskPhoneNumber(phone: string): string {
+  if (!phone || phone.length < 7) return phone;
+  const start = phone.slice(0, 5);
+  const end = phone.slice(-4);
+  return `${start} *** ${end}`;
+}
+
+/**
+ * Encrypts sensitive credentials or tokens at rest using AES-256-GCM.
+ * Output format: iv:authTag:ciphertext in hex encoding.
+ */
+export function encryptText(plaintext: string, secretKey: string): string {
+  const key = crypto.createHash("sha256").update(secretKey).digest();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return `${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted.toString("hex")}`;
+}
+
+/**
+ * Decrypts AES-256-GCM encrypted tokens.
+ */
+export function decryptText(encryptedString: string, secretKey: string): string {
+  const parts = encryptedString.split(":");
+  if (parts.length !== 3) {
+    throw new Error("Invalid encrypted string format. Expected iv:authTag:ciphertext.");
+  }
+  const [ivHex, authTagHex, cipherHex] = parts;
+  const key = crypto.createHash("sha256").update(secretKey).digest();
+  const iv = Buffer.from(ivHex, "hex");
+  const authTag = Buffer.from(authTagHex, "hex");
+  const ciphertext = Buffer.from(cipherHex, "hex");
+
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(authTag);
+  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  return decrypted.toString("utf8");
+}
+

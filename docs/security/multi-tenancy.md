@@ -6,13 +6,13 @@
 User
  └── Workspace Membership
       └── Workspace
-           ├── Receptionists (Phase 2)
-           ├── Knowledge (Phase 2)
-           ├── Calls (Phase 3)
-           ├── Contacts (Phase 3)
-           ├── Leads (Phase 3)
-           ├── Appointments (Phase 3)
-           └── Audit Logs (Phase 1)
+           ├── Receptionists and transfer destinations
+           ├── Knowledge sources and chunks
+           ├── Contacts, leads, and messages
+           ├── Services and appointments
+           ├── Calendar integrations
+           ├── Communications and templates
+           └── Audit logs
 ```
 
 ## Mandatory Tenant Scoping

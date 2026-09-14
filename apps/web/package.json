@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@openai/agents": "0.17.0",
     "@receptionai/config": "workspace:*",
     "@receptionai/ui": "workspace:*",
     "@receptionai/validation": "workspace:*",

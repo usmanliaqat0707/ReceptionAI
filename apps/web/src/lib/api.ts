@@ -37,5 +37,20 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     throw new ApiException(res.status, error);
   }
 
-  return json.data as T;
+  const result = json.data !== undefined ? json.data : json;
+  if (result && typeof result === "object" && !("data" in result)) {
+    try {
+      Object.defineProperty(result, "data", {
+        get() {
+          return result;
+        },
+        enumerable: false,
+        configurable: true,
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  return result as T;
 }

@@ -1,0 +1,63 @@
+name: Bug report
+description: Report incorrect or unsafe behavior in ReceptionAI
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Do not include real
+        customer phone numbers, emails, calendar tokens, or session cookies.
+        Security issues belong in SECURITY.md, not here.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong in one or two sentences?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include role (owner, admin, staff, viewer) and the URL or API route.
+      placeholder: |
+        1. Sign in as demo@brightdental.com
+        2. Open /appointments
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Auth / sessions
+        - Tenancy / RBAC
+        - Receptionists / realtime tools
+        - Knowledge / RAG
+        - Appointments / calendar
+        - Communications
+        - Dashboard UI
+        - CI / local setup
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: "Example: Node 20.19, pnpm 11.25, Windows 11, commit SHA"
+    validations:
+      required: true

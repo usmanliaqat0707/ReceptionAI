@@ -1,52 +1,84 @@
-# ReceptionAI Architecture Overview (Phase 0 & Phase 1)
+# ReceptionAI architecture overview
 
-## High-Level System Architecture
+## High-level system
 
 ```text
                                ┌────────────────────────┐
-                               │  Browser / Client SPA  │
+                               │  Browser / dashboard   │
                                └───────────┬────────────┘
-                                           │
-                                           │ HTTP (Cookies / SameSite=Lax)
+                                           │ HTTP cookies (SameSite=Lax)
                                            ▼
                                ┌────────────────────────┐
                                │  apps/web (Next.js 14) │
                                └───────────┬────────────┘
-                                           │
-                                           │ API Proxy / Rewrites
+                                           │ API rewrite / same-origin fetch
                                            ▼
                                ┌────────────────────────┐
                                │   apps/api (Fastify)   │
                                └─────┬────────────┬─────┘
-                                     │            │
-                 Prisma ORM (Pool)   │            │ Redis Client
+                     Prisma + pgvector│            │ Redis
                                      ▼            ▼
                            ┌─────────────┐    ┌──────────┐
                            │ PostgreSQL  │    │  Redis   │
-                           │   Port 5433 │    │ Port 6380│
+                           │   :5433     │    │  :6380   │
                            └─────────────┘    └──────────┘
-
-       [Future Phase 3 Components: apps/realtime-gateway & apps/worker]
 ```
 
-## Monorepo Layout
+Optional live providers attach at the API boundary: OpenAI (Realtime and
+embeddings), Google Calendar, Twilio SMS, and Resend email. Local development
+can run without those keys by using mock embeddings, the internal demo
+calendar, and mock communication providers.
 
-The repository is configured as a `pnpm workspaces` monorepo orchestrated with `Turborepo`:
+`apps/realtime-gateway` and `apps/worker` are reserved for production voice
+streaming and background delivery. They are not required for the current
+dashboard, playground, RAG, scheduling, or outbox flows.
 
-- `apps/web`: Next.js 14 App Router application delivering a clean, restrained B2B SaaS interface.
-- `apps/api`: Fastify backend handling authentication, workspace tenancy, RBAC enforcement, session management, and immutable audit logs.
-- `apps/realtime-gateway`: Clean bootstrap stub ready for Phase 3 WebRTC audio and OpenAI Realtime sessions.
-- `apps/worker`: Clean bootstrap stub ready for Phase 3 background job queues and asynchronous task processing.
-- `packages/db`: Prisma database client, schema definitions, migrations, and seed scripts.
-- `packages/config`: Centralized environment variable validation (Zod) and application constants.
-- `packages/validation`: Shared domain and request validation schemas.
-- `packages/security`: Cryptographic token generators, password hashing (bcrypt), and authorization logic.
-- `packages/observability`: Structured Pino logging with automatic secret redaction and request tracing.
-- `packages/ui`: Reusable UI primitives (Buttons, Inputs, Cards, Badges, Tables).
+## Monorepo layout
 
-## Current Phase Status
+The repository is a pnpm workspace orchestrated by Turborepo.
 
-- **Phase 0 (Engineering Foundation)**: Complete
-- **Phase 1 (SaaS Core)**: Complete
-- **Phase 2 (AI Receptionist Builder & RAG)**: Deferred
-- **Phase 3 (Realtime Telephony & Voice Gateway)**: Deferred
+| Package | Role |
+| ------- | ---- |
+| `apps/web` | B2B dashboard and receptionist voice playground |
+| `apps/api` | Auth, tenancy, tools, knowledge, appointments, communications |
+| `apps/realtime-gateway` | Bootstrap for future WebRTC / telephony streaming |
+| `apps/worker` | Bootstrap for future async delivery and crawl workers |
+| `packages/db` | Prisma schema, client, seed |
+| `packages/config` | Zod env validation, RBAC matrix, domain constants |
+| `packages/validation` | Shared request schemas |
+| `packages/security` | Token hashing, bcrypt, permission helpers |
+| `packages/observability` | Pino logging with secret redaction |
+| `packages/ui` | Shared UI primitives |
+
+## Request path for a tenant action
+
+1. The browser sends the `rai_session` cookie to the API.
+2. `authenticateSession` hashes the opaque token and loads the user.
+3. The route calls `requireWorkspaceAccess(workspaceId, permission)`.
+4. Domain services query Prisma with both the record id and `workspaceId`.
+5. Mutations that an AI receptionist can trigger also pass through the tool
+   gateway, confirmation rules, and (when relevant) communication policy.
+
+Knowledge of a workspace id or slug is never enough to authorize a request.
+
+## Capability status
+
+| Capability | Status |
+| ---------- | ------ |
+| Engineering foundation (monorepo, CI, env validation) | Implemented |
+| SaaS core (auth, workspaces, RBAC, audit) | Implemented |
+| Receptionist builder and policy runtime | Implemented |
+| OpenAI Realtime playground and tool gateway | Implemented |
+| Knowledge ingestion and hybrid RAG | Implemented |
+| Appointments, availability, slot tokens | Implemented |
+| Google Calendar and internal demo calendar | Implemented |
+| SMS / email outbox and provider webhooks | Implemented |
+| Production PSTN / carrier telephony | Not implemented |
+| Horizontally scaled worker / gateway | Stub only |
+
+## Related documents
+
+- [Local setup](../development/local-setup.md)
+- [Authentication](../security/authentication.md)
+- [Multi-tenancy](../security/multi-tenancy.md)
+- [Documentation index](../README.md)

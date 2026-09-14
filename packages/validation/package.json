@@ -11,10 +11,11 @@
   },
   "dependencies": {
     "@receptionai/config": "workspace:*",
+    "libphonenumber-js": "^1.13.12",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
-    "@types/node": "^20.17.6"
+    "@types/node": "^20.17.6",
+    "typescript": "^5.6.3"
   }
 }

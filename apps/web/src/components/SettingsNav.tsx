@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, Users, ShieldCheck, ScrollText } from "lucide-react";
+import { Building2, Users, ShieldCheck, ScrollText, Briefcase, Calendar, Send, FileText } from "lucide-react";
 
 export function SettingsNav() {
   const pathname = usePathname();
@@ -11,6 +11,10 @@ export function SettingsNav() {
   const tabs = [
     { label: "Workspace Details", href: "/settings/workspace", icon: Building2 },
     { label: "Team Members", href: "/settings/team", icon: Users },
+    { label: "Services Catalog", href: "/settings/services", icon: Briefcase },
+    { label: "Scheduling Policy", href: "/settings/scheduling", icon: Calendar },
+    { label: "Messaging & Policy", href: "/settings/communications", icon: Send },
+    { label: "Templates", href: "/settings/communications/templates", icon: FileText },
     { label: "Security & Sessions", href: "/settings/security", icon: ShieldCheck },
     { label: "Audit Log", href: "/settings/audit-log", icon: ScrollText },
   ];

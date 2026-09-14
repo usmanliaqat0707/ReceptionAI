@@ -15,6 +15,12 @@ dist/
 .env*.local
 .env
 
+# Coverage and editor
+coverage/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
 # Docker data
 postgres_data/
 redis_data/

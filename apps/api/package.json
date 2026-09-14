@@ -8,7 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "vitest run",
+    "test": "vitest run --no-file-parallelism",
     "typecheck": "tsc --noEmit",
     "lint": "echo ok"
   },
@@ -21,12 +21,16 @@
     "@receptionai/observability": "workspace:*",
     "@receptionai/security": "workspace:*",
     "@receptionai/validation": "workspace:*",
+    "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "fastify": "^4.28.1",
-    "ioredis": "^5.4.1"
+    "ioredis": "^5.4.1",
+    "mammoth": "^1.12.2",
+    "pdf-parse": "^2.4.5"
   },
   "devDependencies": {
     "@types/node": "^20.17.6",
+    "@types/pdf-parse": "^1.1.5",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
