@@ -19,7 +19,7 @@ jobs:
       final_message: ${{ steps.run_codex.outputs.final-message }}
     steps:
       - name: Checkout pull request merge commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
           fetch-depth: 0
@@ -49,7 +49,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Comment on pull request
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           CODEX_FINAL_MESSAGE: ${{ needs.review.outputs.final_message }}
         with:
