@@ -44,7 +44,7 @@ Prerequisites: Node.js 20+, pnpm 11.25.0, Docker.
 
 ## How to make a change
 
-1. Create a branch from `main`: `git checkout -b fix/short-description`.
+1. Create a branch from `master`: `git checkout -b fix/short-description`.
 2. Keep the change scoped to one concern.
 3. Match existing TypeScript, Prettier, and naming conventions.
 4. Add or update tests in `apps/api/test` when you change auth, tenancy,

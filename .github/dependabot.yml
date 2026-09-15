@@ -7,6 +7,11 @@ updates:
     labels:
       - dependencies
       - ci
+    open-pull-requests-limit: 3
+    groups:
+      github-actions:
+        patterns:
+          - '*'
 
   - package-ecosystem: npm
     directory: /
@@ -14,10 +19,39 @@ updates:
       interval: monthly
     labels:
       - dependencies
-    open-pull-requests-limit: 8
+    open-pull-requests-limit: 5
     groups:
       eslint-and-types:
         patterns:
-          - "@types/*"
+          - '@types/*'
           - eslint*
           - typescript
+      production-patch-and-minor:
+        dependency-type: production
+        update-types:
+          - 'minor'
+          - 'patch'
+      development-patch-and-minor:
+        dependency-type: development
+        update-types:
+          - 'minor'
+          - 'patch'
+    ignore:
+      - dependency-name: prisma
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@prisma/client'
+        update-types: ['version-update:semver-major']
+      - dependency-name: zod
+        update-types: ['version-update:semver-major']
+      - dependency-name: tailwindcss
+        update-types: ['version-update:semver-major']
+      - dependency-name: ioredis
+        update-types: ['version-update:semver-major']
+      - dependency-name: react
+        update-types: ['version-update:semver-major']
+      - dependency-name: react-dom
+        update-types: ['version-update:semver-major']
+      - dependency-name: next
+        update-types: ['version-update:semver-major']
+      - dependency-name: bcryptjs
+        update-types: ['version-update:semver-major']
