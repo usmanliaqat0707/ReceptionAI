@@ -92,7 +92,7 @@ importers:
     dependencies:
       '@openai/agents':
         specifier: 0.17.0
-        version: 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)
+        version: 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)
       '@receptionai/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -161,8 +161,8 @@ importers:
   packages/config:
     dependencies:
       zod:
-        specifier: ^3.23.8
-        version: 3.25.76
+        specifier: ^4.6.2
+        version: 4.6.2
     devDependencies:
       '@types/node':
         specifier: ^20.17.6
@@ -265,8 +265,8 @@ importers:
         specifier: ^1.13.12
         version: 1.13.12
       zod:
-        specifier: ^3.23.8
-        version: 3.25.76
+        specifier: ^4.6.2
+        version: 4.6.2
     devDependencies:
       '@types/node':
         specifier: ^20.17.6
@@ -3284,11 +3284,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
-  zod@4.5.4:
-    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
+  zod@4.6.2:
+    resolution: {integrity: sha512-lh5RCAGFa1Cm2hjtNwLQhSs/AsqdWnTQaBER9fEwN/88pSh7KOtJavtBx/0VlkN/uFd61SwYmljLMDAsHlvzBQ==}
 
 snapshots:
 
@@ -3559,12 +3556,12 @@ snapshots:
       eventsource-parser: 3.1.1
       jose: 6.2.10
       pkce-challenge: 5.0.1
-      zod: 4.5.4
+      zod: 4.6.2
     optional: true
 
   '@modelcontextprotocol/core@2.0.0':
     dependencies:
-      zod: 4.5.4
+      zod: 4.6.2
     optional: true
 
   '@napi-rs/canvas-android-arm64@0.1.80':
@@ -3667,14 +3664,14 @@ snapshots:
 
   '@nolyfill/is-core-module@1.0.39': {}
 
-  '@openai/agents-core@0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)':
+  '@openai/agents-core@0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       debug: 4.4.3(supports-color@7.2.0)
-      openai: 7.9.0(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)
+      openai: 7.9.0(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)
     optionalDependencies:
       '@modelcontextprotocol/client': 2.0.0
-      zod: 4.5.4
+      zod: 4.6.2
     transitivePeerDependencies:
       - '@aws-sdk/credential-provider-node'
       - '@smithy/hash-node'
@@ -3683,12 +3680,12 @@ snapshots:
       - undici
       - ws
 
-  '@openai/agents-openai@0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)':
+  '@openai/agents-openai@0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)':
     dependencies:
-      '@openai/agents-core': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)
+      '@openai/agents-core': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)
       debug: 4.4.3(supports-color@7.2.0)
-      openai: 7.9.0(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)
-      zod: 4.5.4
+      openai: 7.9.0(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)
+      zod: 4.6.2
     transitivePeerDependencies:
       - '@aws-sdk/credential-provider-node'
       - '@smithy/hash-node'
@@ -3697,13 +3694,13 @@ snapshots:
       - undici
       - ws
 
-  '@openai/agents-realtime@0.17.0(supports-color@7.2.0)(undici@7.29.0)(zod@4.5.4)':
+  '@openai/agents-realtime@0.17.0(supports-color@7.2.0)(undici@7.29.0)(zod@4.6.2)':
     dependencies:
-      '@openai/agents-core': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)
+      '@openai/agents-core': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)
       '@types/ws': 8.18.1
       debug: 4.4.3(supports-color@7.2.0)
       ws: 8.21.3
-      zod: 4.5.4
+      zod: 4.6.2
     transitivePeerDependencies:
       - '@aws-sdk/credential-provider-node'
       - '@smithy/hash-node'
@@ -3713,14 +3710,14 @@ snapshots:
       - undici
       - utf-8-validate
 
-  '@openai/agents@0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)':
+  '@openai/agents@0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)':
     dependencies:
-      '@openai/agents-core': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)
-      '@openai/agents-openai': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)
-      '@openai/agents-realtime': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(zod@4.5.4)
+      '@openai/agents-core': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)
+      '@openai/agents-openai': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)
+      '@openai/agents-realtime': 0.17.0(supports-color@7.2.0)(undici@7.29.0)(zod@4.6.2)
       debug: 4.4.3(supports-color@7.2.0)
-      openai: 7.9.0(undici@7.29.0)(ws@8.21.3)(zod@4.5.4)
-      zod: 4.5.4
+      openai: 7.9.0(undici@7.29.0)(ws@8.21.3)(zod@4.6.2)
+      zod: 4.6.2
     transitivePeerDependencies:
       - '@aws-sdk/credential-provider-node'
       - '@smithy/hash-node'
@@ -5581,11 +5578,11 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  openai@7.9.0(undici@7.29.0)(ws@8.21.3)(zod@4.5.4):
+  openai@7.9.0(undici@7.29.0)(ws@8.21.3)(zod@4.6.2):
     optionalDependencies:
       undici: 7.29.0
       ws: 8.21.3
-      zod: 4.5.4
+      zod: 4.6.2
 
   option@0.2.4: {}
 
@@ -6448,6 +6445,4 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod@3.25.76: {}
-
-  zod@4.5.4: {}
+  zod@4.6.2: {}
